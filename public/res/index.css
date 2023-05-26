@@ -1,0 +1,19 @@
+
+.chatContent {
+    border-style: double;
+    background-color: lightcyan;
+    width: 500px;
+    height: 500px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.chatContent > p {
+    word-break: break-all;
+}
+
+.formContainer {
+    margin: auto;
+    padding: 20px;
+    text-align: center;
+}
