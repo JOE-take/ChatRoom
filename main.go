@@ -8,6 +8,9 @@ import (
 
 var content []string
 
+// Users Usersはemailをkeyに使用してUserの構造体を返す
+var Users map[string]User
+
 func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("public/"))))
@@ -15,6 +18,9 @@ func main() {
 	content = make([]string, 0, 16)
 	mux.HandleFunc("/", index)
 	mux.HandleFunc("/login", login)
+	mux.HandleFunc("/signup", signup)
+
+	Users = map[string]User{}
 
 	server := &http.Server{
 		Addr:    "0.0.0.0:8080",
@@ -34,21 +40,4 @@ func index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t.Execute(w, content)
-}
-
-func login(w http.ResponseWriter, r *http.Request) {
-	t, _ := template.ParseFiles("view/login.html")
-
-	if r.Method == "POST" {
-		userName := r.FormValue("userName")
-		email := r.FormValue("email")
-		//パスワードの扱いは変更が必要
-		password := r.FormValue("password")
-		fmt.Println("userName: ", userName)
-		fmt.Println("email: ", email)
-		fmt.Println("password: ", password)
-		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
-	}
-
-	t.Execute(w, "")
 }

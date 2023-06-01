@@ -4,20 +4,36 @@
 	<meta charset="UTF-8">
 	<title>login</title>
 </head>
-<body>
-	<div class="formContainer">
-		<form method="POST">
-			<label>UserName:</label>
-			<input type="text" name="userName">
-			<br/>
-			<label>Email:</label>
-			<input type="text" name="email">
-			<br/>
-			<label>Password:</label>
-			<input type="text" name="password">
-			<br/>
-			<input type="submit" name="send" value="send">
-		</form>
-	</div>
-</body>
+	<body>
+		<div class="formContainer">
+			<form method="POST">
+				<table>
+					<tbody>
+					<tr>
+						<td>
+							<label>Email:</label>
+						</td>
+						<td>
+							<input type="text" name="email">
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<label>Password:</label>
+						</td>
+						<td>
+							<input type="password" name="password">
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<input type="submit" name="send" value="send">
+						</td>
+					</tr>
+					</tbody>
+				</table>
+			</form>
+		</div>
+		{{ . }}
+	</body>
 </html>
