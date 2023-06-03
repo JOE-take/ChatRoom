@@ -9,9 +9,6 @@ import (
 
 var content []string
 
-// Users Usersはemailをkeyに使用してUserの構造体を返す
-var Users map[string]User
-
 var Db *sql.DB
 
 func main() {
@@ -34,7 +31,6 @@ func main() {
 	mux.HandleFunc("/login", login)
 	mux.HandleFunc("/signup", signup)
 
-	Users = map[string]User{}
 	sessions = map[string]session{}
 	content = make([]string, 0, 16)
 

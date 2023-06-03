@@ -2,10 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -21,6 +23,23 @@ func dbInit() error {
 
 	Db = db
 	return nil
+}
+
+func getUserFromDb(email string) (User, error) {
+	query := fmt.Sprintf("select * from user where email = \"%s\"", email)
+	row, err := Db.Query(query)
+	if err != nil {
+		return User{}, err
+	}
+
+	user := User{}
+	for row.Next() {
+		if err := row.Scan(&user.UserName, &user.Email, &user.Password); err != nil {
+			return User{}, err
+		}
+	}
+
+	return user, nil
 }
 
 func startSession(w http.ResponseWriter, u *User) {
@@ -96,4 +115,25 @@ func (formData *User) Validate() (ok bool, result string) {
 		return false, result
 	}
 	return true, result
+}
+
+// セッションが存在するか、セッションがタイムアウトしていないかを確認する
+func authenticateSession(cookie *http.Cookie) bool {
+
+	// セッションが存在するかどうかの確認
+	v := strings.Split(cookie.Value, "|")
+	sessionToken := v[1]
+	userSession, ok := sessions[sessionToken]
+	if !ok {
+		return false
+	}
+
+	// セッションがタイムアウトしていないかの確認
+	if userSession.isExpired() {
+		delete(sessions, sessionToken)
+		return false
+	}
+
+	// 何もなければtrueを返す
+	return true
 }

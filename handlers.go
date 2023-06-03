@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -28,8 +29,18 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 func chatRoom(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("view/chatRoom.html")
-	authenticate(w, r)
-	c, _ := r.Cookie("session_token")
+
+	c, err := r.Cookie("session_token")
+	if err != nil && err != http.ErrNoCookie {
+		panic(err)
+	} else if c == nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	} else if !authenticateSession(c) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	v := strings.Split(c.Value, "|")
 	userName := v[0]
 
@@ -54,7 +65,6 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 		//フォームのValidation
 		if ok, errorMessage := user.Validate(); !ok {
-			fmt.Println("validator: ", errorMessage)
 			t.Execute(w, errorMessage)
 			return
 		}
@@ -63,8 +73,13 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		hashedPassword, _ := passwordEncrypt(user.Password)
 		user.Password = string(hashedPassword)
 
-		//User情報を追加
-		Users[user.Email] = *user
+		//データベースにユーザ情報を登録
+		insert, err := Db.Prepare("insert into user values(?, ?, ?)")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to insert data to database\n")
+			return
+		}
+		insert.Exec(user.UserName, user.Email, user.Password)
 
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
@@ -85,14 +100,19 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 		//フォームのValidation
 		if ok, errorMessage := user.Validate(); !ok {
-			fmt.Println("validator: ", errorMessage)
 			t.Execute(w, errorMessage)
 			return
 		}
 
-		//Userが存在するかどうか
-		if registeredUser, ok := Users[user.Email]; !ok {
-			fmt.Println("user not found")
+		registeredUser, err := getUserFromDb(user.Email)
+		if err != nil {
+			fmt.Println(err)
+			return
+		} else if registeredUser.Email == "" {
+			//userが空なら登録されていない
+			errorMessage := "enter a correct information"
+			t.Execute(w, errorMessage)
+			return
 		} else {
 
 			//パスワードが正しいかどうかのチェック
@@ -114,31 +134,3 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 //func logout(w http.ResponseWriter)
-
-func authenticate(w http.ResponseWriter, r *http.Request) {
-
-	//Cookieが存在するかどうかの確認
-	cookie, err := r.Cookie("session_token")
-	if err != nil {
-		if err == http.ErrNoCookie {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-		}
-		fmt.Println(err)
-		return
-	}
-
-	//セッションが存在するかどうかの確認
-	v := strings.Split(cookie.Value, "|")
-	sessionToken := v[1]
-	userSession, ok := sessions[sessionToken]
-	if !ok {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-	}
-
-	//セッションがタイムアウトしていないかの確認
-	if userSession.isExpired() {
-		delete(sessions, sessionToken)
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-	}
-
-}
