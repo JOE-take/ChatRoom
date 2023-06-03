@@ -1,12 +1,27 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
 )
+
+func dbInit() error {
+	db, err := sql.Open("mysql", "root:password@tcp(localhost:3306)/chatroom")
+	if err != nil {
+		return err
+	}
+
+	if err := db.Ping(); err != nil {
+		return err
+	}
+
+	Db = db
+	return nil
+}
 
 func startSession(w http.ResponseWriter, u *User) {
 	sessionToken := uuid.NewString()
