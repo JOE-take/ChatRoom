@@ -69,7 +69,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		//パスワードの暗号化
+		//パスワードのハッシュ化
 		hashedPassword, _ := passwordEncrypt(user.Password)
 		user.Password = string(hashedPassword)
 
